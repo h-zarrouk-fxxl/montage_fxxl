@@ -401,7 +401,7 @@
       state.filter.to    = to;
       markActiveChip("custom");
       updateFilterLabel();
-      invalidateAndReload();
+      applyFilterChange();
     });
     updateFilterLabel();
   }
@@ -415,7 +415,18 @@
       .classList.toggle("hidden", range !== "custom");
     if (range === "custom") return;     // wait for apply
     updateFilterLabel();
-    invalidateAndReload();
+    applyFilterChange();
+  }
+
+  /* Smart filter-apply: wenn der Snapshot geladen ist, filtern wir 100%
+     client-side aus dem Cache (keine API-Calls). Nur falls KEIN Snapshot
+     vorhanden ist (Fallback-Modus), wird neu geladen. */
+  function applyFilterChange() {
+    if (state.data.snapshotGeneratedAt || state.loaded.offene) {
+      reRenderCurrentTab();
+    } else {
+      invalidateAndReload();
+    }
   }
 
   function markActiveChip(range) {
@@ -446,12 +457,12 @@
     document.getElementById("filterMarke").addEventListener("change", (e) => {
       state.filter.marke = e.target.value;
       updateFilterLabel();
-      invalidateAndReload();
+      applyFilterChange();
     });
     document.getElementById("filterKategorie").addEventListener("change", (e) => {
       state.filter.kategorie = e.target.value;
       updateFilterLabel();
-      invalidateAndReload();
+      applyFilterChange();
     });
 
     // Diese sind CLIENT-SIDE Filter → kein Reload, nur Re-Render
@@ -494,7 +505,7 @@
         if (el) el.value = "";
       });
       updateFilterLabel();
-      invalidateAndReload();
+      applyFilterChange();
     });
   }
 
@@ -1848,7 +1859,40 @@
   function filterRows(rows, query) {
     let out = rows || [];
 
-    // 1. Volltext-Suche
+    // 0. Zeitraum (Standard / Heute / Diese Woche / Dieser Monat /
+    //    Aeltere > 10 Tage / Alle / Custom). Wenn der Snapshot geladen ist,
+    //    machen wir das CLIENT-SIDE - keine API-Calls.
+    const range = state.filter.range || "default";
+    if (range !== "all") {
+      const dr = clientDateRange(range, state.filter.from, state.filter.to);
+      if (dr) {
+        out = out.filter(r => {
+          // "default" hat einen Sonderfall: heute neu UND aeltere > 10 Tage
+          if (range === "default") {
+            return inRange(r.datum, dr.todayFrom, dr.todayTo) ||
+                   isOlderThan(r.datum, dr.olderThanDays);
+          }
+          if (range === "older10") {
+            return isOlderThan(r.datum, dr.olderThanDays);
+          }
+          return inRange(r.datum, dr.from, dr.to);
+        });
+      }
+    }
+
+    // 1. Marke
+    if (state.filter.marke && state.filter.marke !== "Alle") {
+      const mk = state.filter.marke.toLowerCase();
+      out = out.filter(r => (r.marke || "").toLowerCase() === mk);
+    }
+
+    // 2. Kategorie (Fahrradtyp)
+    if (state.filter.kategorie && state.filter.kategorie !== "Alle") {
+      const kk = state.filter.kategorie.toLowerCase();
+      out = out.filter(r => (r.fahrradtyp || "").toLowerCase() === kk);
+    }
+
+    // 3. Volltext-Suche
     if (query) {
       out = out.filter(r =>
         (r.salesid || r.invoiceid || "").toLowerCase().includes(query) ||
@@ -1864,13 +1908,13 @@
       );
     }
 
-    // 2. Pickstatus-Dropdown
+    // 4. Pickstatus-Dropdown
     const pf = (state.filter.pickstatus || "").toLowerCase();
     if (pf) {
       out = out.filter(r => (r.pickstatus || "").toLowerCase() === pf);
     }
 
-    // 3. Lagerplatz: irgendeine Station hat diesen Code
+    // 5. Lagerplatz: irgendeine Station hat diesen Code
     const lp = (state.filter.lagerplatz || "").toLowerCase();
     if (lp) {
       out = out.filter(r =>
@@ -1878,14 +1922,14 @@
       );
     }
 
-    // 4. Montage abgeschlossen / nicht abgeschlossen
+    // 6. Montage abgeschlossen / nicht abgeschlossen
     if (state.filter.montiertOnly === true) {
       out = out.filter(r => hasStationClosed(r, "montage"));
     } else if (state.filter.montiertOnly === false) {
       out = out.filter(r => !hasStationClosed(r, "montage"));
     }
 
-    // 5. Verpackung abgeschlossen / nicht abgeschlossen
+    // 7. Verpackung abgeschlossen / nicht abgeschlossen
     if (state.filter.verpacktOnly === true) {
       out = out.filter(r => hasStationClosedPrefix(r, "verpack"));
     } else if (state.filter.verpacktOnly === false) {
@@ -1893,6 +1937,51 @@
     }
 
     return out;
+  }
+
+  /* Zeitraum -> {from, to} Date-Range; default + older10 sind Spezialfaelle.
+     Verwendet Berlin-Lokalzeit-naive Datumsvergleiche (yyyy-mm-dd Strings). */
+  function clientDateRange(range, customFrom, customTo) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (range === "today") {
+      return { from: today, to: today };
+    }
+    if (range === "week") {
+      const d = new Date(today);
+      const day = d.getDay() || 7;     // Mo=1, So=7
+      d.setDate(d.getDate() - (day - 1));
+      const end = new Date(d); end.setDate(end.getDate() + 6);
+      return { from: d, to: end };
+    }
+    if (range === "month") {
+      const from = new Date(today.getFullYear(), today.getMonth(), 1);
+      const to   = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      return { from, to };
+    }
+    if (range === "older10") {
+      return { olderThanDays: 10 };
+    }
+    if (range === "default") {
+      // heute + Auftraege aelter als 10 Tage
+      return { todayFrom: today, todayTo: today, olderThanDays: 10 };
+    }
+    if (range === "custom" && customFrom && customTo) {
+      return { from: new Date(customFrom), to: new Date(customTo) };
+    }
+    return null;   // "all" oder unbekannt -> kein Filter
+  }
+  function inRange(dateLike, from, to) {
+    if (!dateLike) return false;
+    const d = new Date(dateLike); d.setHours(0, 0, 0, 0);
+    if (from && d < from) return false;
+    if (to)   { const t = new Date(to); t.setHours(23, 59, 59, 999); if (d > t) return false; }
+    return true;
+  }
+  function isOlderThan(dateLike, days) {
+    if (!dateLike) return false;
+    const d = new Date(dateLike);
+    const ms = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
+    return ms >= days;
   }
 
   function hasStationClosed(r, name) {
