@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Montage Dashboard | Fahrrad XXL</title>
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body class="app-body">
+
+<!-- ========= SIDEBAR ========= -->
+<aside class="sidebar" id="sidebar">
+
+  <div class="sidebar-brand">
+    <div class="brand-mark">XXL</div>
+    <div class="brand-text">
+      <strong>Fahrrad XXL</strong>
+      <span>Montage</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-group-title">Übersicht</div>
+
+    <button class="nav-item active" data-tab="offene">
+      <svg viewBox="0 0 24 24"><path d="M4 4h16v4H4zM4 10h16v4H4zM4 16h16v4H4z"/></svg>
+      <span>Offene Aufträge</span>
+      <em class="nav-badge" id="navBadgeOffene">–</em>
+    </button>
+
+    <button class="nav-item" data-tab="fakturiert">
+      <svg viewBox="0 0 24 24"><path d="M9 2v2H5v18h14V4h-4V2zm2 3h2v2h-2zM7 9h10v2H7zm0 4h10v2H7zm0 4h7v2H7z"/></svg>
+      <span>Fakturierte Aufträge</span>
+      <em class="nav-badge" id="navBadgeFakt">–</em>
+    </button>
+
+    <button class="nav-item" data-tab="uebersicht">
+      <svg viewBox="0 0 24 24"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>
+      <span>Montage-Übersicht</span>
+    </button>
+
+    <button class="nav-item" data-tab="daily">
+      <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v5h-8zm0 7h8v11h-8zM3 13h8v8H3z"/></svg>
+      <span>Daily Tracking</span>
+    </button>
+
+    <div class="nav-group-title">Einstellungen</div>
+
+    <div class="settings-block">
+      <label class="lbl">Anzahl Monteure</label>
+      <div class="num-stepper">
+        <button type="button" data-step="-1" data-target="setMonteure">−</button>
+        <input type="number" id="setMonteure" value="5" min="1" max="50" />
+        <button type="button" data-step="1" data-target="setMonteure">+</button>
+      </div>
+
+      <label class="lbl">Stunden / Tag</label>
+      <div class="num-stepper">
+        <button type="button" data-step="-1" data-target="setStunden" data-dec="1">−</button>
+        <input type="number" id="setStunden" value="7" min="1" max="12" step="0.5" />
+        <button type="button" data-step="1"  data-target="setStunden" data-dec="1">+</button>
+      </div>
+
+      <label class="lbl">Arbeitstage</label>
+      <div class="day-picker" id="dayPicker">
+        <label><input type="checkbox" value="1" checked><span>Mo</span></label>
+        <label><input type="checkbox" value="2" checked><span>Di</span></label>
+        <label><input type="checkbox" value="3" checked><span>Mi</span></label>
+        <label><input type="checkbox" value="4" checked><span>Do</span></label>
+        <label><input type="checkbox" value="5" checked><span>Fr</span></label>
+        <label><input type="checkbox" value="6"><span>Sa</span></label>
+        <label><input type="checkbox" value="0"><span>So</span></label>
+      </div>
+
+      <div class="capacity-readout">
+        <div><span>Kapazität / Tag</span><strong id="capPerDay">35 Std</strong></div>
+        <div><span>Kapazität / Woche</span><strong id="capPerWeek">175 Std</strong></div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" id="userAvatar">–</div>
+      <div class="user-meta">
+        <strong id="userName">–</strong>
+        <span id="userLagerort">–</span>
+      </div>
+      <button class="icon-btn" id="logoutBtn" title="Abmelden">
+        <svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5v3H3v4h7zm3-14h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6v-2h6V5h-6z"/></svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- ========= MAIN ========= -->
+<main class="main">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="icon-btn menu-toggle" id="menuToggle">
+        <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <div>
+        <h1 class="page-title" id="pageTitle">Offene Aufträge</h1>
+        <p class="page-sub" id="pageSub">Übersicht aller offenen Montageaufträge.</p>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div class="clock" id="clock">–</div>
+      <button class="icon-btn" id="refreshBtn" title="Aktualisieren">
+        <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.74 10h-2.08A6 6 0 1 1 12 6a5.92 5.92 0 0 1 4.22 1.78L13 11h7V4z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Filter bar -->
+  <section class="filter-bar" id="filterBar">
+    <div class="filter-chips">
+      <button class="chip chip-active" data-range="default">Standard</button>
+      <button class="chip" data-range="today">Heute</button>
+      <button class="chip" data-range="week">Diese Woche</button>
+      <button class="chip" data-range="month">Dieser Monat</button>
+      <button class="chip" data-range="older10">Ältere &gt; 10 Tage</button>
+      <button class="chip" data-range="all">Alle</button>
+      <button class="chip chip-custom" data-range="custom">
+        <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 18H5V8h14z"/></svg>
+        Zeitraum
+      </button>
+    </div>
+
+    <div class="filter-custom hidden" id="filterCustom">
+      <label>Von <input type="date" id="dateFrom"></label>
+      <label>Bis <input type="date" id="dateTo"></label>
+      <button class="btn btn-primary btn-sm" id="applyCustom">Anwenden</button>
+    </div>
+
+    <div class="filter-dropdowns">
+      <label class="dd">
+        <span>Marke</span>
+        <select id="filterMarke">
+          <option value="">Alle Marken</option>
+        </select>
+      </label>
+      <label class="dd">
+        <span>Kategorie</span>
+        <select id="filterKategorie">
+          <option value="">Alle Kategorien</option>
+        </select>
+      </label>
+      <label class="dd">
+        <span>Pickstatus</span>
+        <select id="filterPickstatus">
+          <option value="">Alle</option>
+          <option value="offen">Offen</option>
+          <option value="vormontage">Vormontage</option>
+          <option value="montage">Montage</option>
+          <option value="montiert">Montiert</option>
+          <option value="verpackung">Verpackung</option>
+          <option value="warenausgang">Warenausgang</option>
+          <option value="storniert">Storniert</option>
+        </select>
+      </label>
+      <label class="dd">
+        <span>Lagerplatz</span>
+        <select id="filterLagerplatz">
+          <option value="">Alle Lagerplätze</option>
+        </select>
+      </label>
+      <label class="dd toggle-dd" title="Nur Aufträge bei denen die Station 'Montage' abgeschlossen wurde">
+        <span>Montage abg.</span>
+        <select id="filterMontiert">
+          <option value="">Alle</option>
+          <option value="ja">✓ Abgeschlossen</option>
+          <option value="nein">✗ Nicht abgeschlossen</option>
+        </select>
+      </label>
+      <label class="dd toggle-dd" title="Nur Aufträge bei denen eine 'Verpack_*'-Station abgeschlossen wurde">
+        <span>Verpackt abg.</span>
+        <select id="filterVerpackt">
+          <option value="">Alle</option>
+          <option value="ja">✓ Abgeschlossen</option>
+          <option value="nein">✗ Nicht abgeschlossen</option>
+        </select>
+      </label>
+      <button class="btn btn-ghost btn-sm" id="resetFilters" title="Filter zurücksetzen">
+        <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+        Zurücksetzen
+      </button>
+    </div>
+
+    <div class="filter-meta" id="filterMeta">
+      <span id="filterLabel">Standard (heute + ältere &gt; 10 Tage)</span>
+      <span class="sep">·</span>
+      <span id="filterCount">0 Einträge</span>
+    </div>
+  </section>
+
+  <!-- ========= TAB: Offene Aufträge ========= -->
+  <section class="tab-panel active" id="tab-offene">
+
+    <!-- KPI row -->
+    <div class="kpi-grid">
+      <div class="kpi card">
+        <div class="kpi-icon orange"><svg viewBox="0 0 24 24"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2zm0-4h-2V9h2z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Offene Aufträge</span>
+          <strong class="kpi-value" id="kpiOffeneCount">0</strong>
+          <span class="kpi-sub" id="kpiOffeneSub">–</span>
+        </div>
+      </div>
+
+      <div class="kpi card">
+        <div class="kpi-icon red"><svg viewBox="0 0 24 24"><path d="M12 8v5l4 2-.75 1.23L10.5 14V8zM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Offene Montagezeit</span>
+          <strong class="kpi-value"><span id="kpiOffeneStd">0</span> Std</strong>
+          <span class="kpi-sub" id="kpiOffeneStdSub">–</span>
+        </div>
+      </div>
+
+      <div class="kpi card">
+        <div class="kpi-icon blue"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10h-2a8 8 0 1 1-8-8z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Kapazität (Std/Tag)</span>
+          <strong class="kpi-value" id="kpiCap">0</strong>
+          <span class="kpi-sub">Monteure × Stunden</span>
+        </div>
+      </div>
+
+      <div class="kpi card">
+        <div class="kpi-icon green"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z" fill="none"/><path d="M4 4v16h16V4zm2 2h12v12H6z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Abbaudauer</span>
+          <strong class="kpi-value"><span id="kpiAbbau">0</span> AT</strong>
+          <span class="kpi-sub">Werktage bis leer</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pickstatus-Übersicht (aus WHSWarehouseWorkLineStaging berechnet) -->
+    <div class="kpi-grid pickstatus-grid">
+      <div class="kpi card">
+        <div class="kpi-icon orange"><svg viewBox="0 0 24 24"><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Offen</span>
+          <strong class="kpi-value" id="kpiPsOffen">0</strong>
+          <span class="kpi-sub">noch keine Station geschlossen</span>
+        </div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-icon blue"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">In Montage</span>
+          <strong class="kpi-value" id="kpiPsMontage">0</strong>
+          <span class="kpi-sub">aktuell in Bearbeitung</span>
+        </div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-icon green"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" fill="none"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Montiert</span>
+          <strong class="kpi-value" id="kpiPsMontiert">0</strong>
+          <span class="kpi-sub">Montage abgeschlossen</span>
+        </div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-icon green"><svg viewBox="0 0 24 24"><path d="M3 7l9 4 9-4M3 7v10l9 4 9-4V7M3 7l9-4 9 4" stroke="currentColor" stroke-width="2" fill="none"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Verpackt / Versand</span>
+          <strong class="kpi-value" id="kpiPsVerpackt">0</strong>
+          <span class="kpi-sub">Verpackung + Warenausgang</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overview row: Kategorien | Marken | Auslastung | Älteste 10 -->
+    <div class="grid-4">
+      <div class="card mini-card">
+        <div class="card-head">
+          <h3>Kategorien</h3>
+          <span class="card-sub">offene Stück</span>
+        </div>
+        <ul class="mini-list" id="listKategorien"></ul>
+      </div>
+
+      <div class="card mini-card">
+        <div class="card-head">
+          <h3>Marken</h3>
+          <span class="card-sub">offene Stück</span>
+        </div>
+        <ul class="mini-list" id="listMarken"></ul>
+      </div>
+
+      <div class="card mini-card">
+        <div class="card-head">
+          <h3>Kapazitätsauslastung</h3>
+          <span class="card-sub" id="gaugeSub">heute</span>
+        </div>
+        <div class="gauge-wrap">
+          <canvas id="gaugeAuslastung"></canvas>
+          <div class="gauge-center">
+            <strong id="gaugeValue">0 %</strong>
+            <span>ausgelastet</span>
+          </div>
+        </div>
+        <div class="gauge-foot">
+          <span><em id="gaugeOpen">0 h</em> offen</span>
+          <span><em id="gaugeCap">0 h</em> verfügbar</span>
+        </div>
+      </div>
+
+      <div class="card mini-card">
+        <div class="card-head">
+          <h3>Älteste offene Aufträge</h3>
+          <span class="card-sub">Top 10</span>
+        </div>
+        <ul class="age-list" id="listAlteste"></ul>
+      </div>
+    </div>
+
+    <!-- Table offene aufträge -->
+    <div class="card table-card">
+      <div class="card-head">
+        <h3>Offene Auftragspositionen</h3>
+        <div class="card-tools">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 13 15.5l.27.28v.79L18.25 21 21 18.25zM9.5 14A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+            <input type="text" id="searchOffene" placeholder="Suchen (Artikel, Marke, Auftrag, Kunde)…" />
+          </div>
+          <button class="btn btn-ghost btn-sm" id="exportOffene">
+            <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5zm7-18-5 5h3v4h4V7h3z"/></svg>
+            Export
+          </button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table sortable" id="tableOffene">
+          <thead>
+            <tr>
+              <th data-sort="salesid">Auftrag</th>
+              <th data-sort="datum">Datum</th>
+              <th data-sort="itemid">Artikel</th>
+              <th data-sort="marke">Marke</th>
+              <th data-sort="modell">Modell</th>
+              <th data-sort="produktgruppe">Gruppe</th>
+              <th data-sort="fahrradtyp">Fahrradtyp</th>
+              <th class="num" data-sort="menge">Menge</th>
+              <th class="num" data-sort="montagezeit_min">Montagezeit</th>
+              <th class="num" data-sort="uvp">UVP</th>
+              <th data-sort="pickstatus">Zeilenstatus</th>
+              <th>Stationen</th>
+              <th data-sort="alter_tage">Alter</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="tableOffeneFooter"></span>
+        <div class="pager" data-table="offene">
+          <label>Zeilen pro Seite
+            <select class="page-size">
+              <option>25</option><option selected>50</option><option>100</option><option>250</option>
+            </select>
+          </label>
+          <button class="page-prev" title="Zurück">‹</button>
+          <span class="page-info">1 / 1</span>
+          <button class="page-next" title="Weiter">›</button>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ========= TAB: Fakturierte Aufträge ========= -->
+  <section class="tab-panel" id="tab-fakturiert">
+
+    <div class="kpi-grid">
+      <div class="kpi card">
+        <div class="kpi-icon green"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Fakturierte Aufträge</span>
+          <strong class="kpi-value" id="kpiFaktCount">0</strong>
+          <span class="kpi-sub">im Zeitraum</span>
+        </div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-icon blue"><svg viewBox="0 0 24 24"><path d="M12 2v20m-9-10h18" stroke="currentColor" stroke-width="2" fill="none"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Montagezeit (faktur.)</span>
+          <strong class="kpi-value"><span id="kpiFaktStd">0</span> Std</strong>
+          <span class="kpi-sub">Summe Minuten</span>
+        </div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-icon red"><svg viewBox="0 0 24 24"><path d="M12 2 1 21h22L12 2z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Ø Montagezeit / Rad</span>
+          <strong class="kpi-value"><span id="kpiFaktAvg">0</span> Min</strong>
+          <span class="kpi-sub">Schnitt im Zeitraum</span>
+        </div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-icon orange"><svg viewBox="0 0 24 24"><path d="M3 17h18v2H3zM3 5h18v2H3zM3 11h18v2H3z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Umsatz (UVP)</span>
+          <strong class="kpi-value" id="kpiFaktUmsatz">0 €</strong>
+          <span class="kpi-sub">auf Basis UVP</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2-1">
+      <div class="card chart-card">
+        <div class="card-head">
+          <h3>Fakturierte Räder je Tag</h3>
+          <span class="card-sub">Zeitreihe</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartFaktDaily"></canvas></div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-head">
+          <h3>Top 5 Marken</h3>
+          <span class="card-sub">fakturiert</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartFaktBrands"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card table-card">
+      <div class="card-head">
+        <h3>Fakturierte Positionen</h3>
+        <div class="card-tools">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 13 15.5l.27.28v.79L18.25 21 21 18.25zM9.5 14A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+            <input type="text" id="searchFakt" placeholder="Suchen…" />
+          </div>
+          <button class="btn btn-ghost btn-sm" id="exportFakt">
+            <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5zm7-18-5 5h3v4h4V7h3z"/></svg>
+            Export
+          </button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table sortable" id="tableFakt">
+          <thead>
+            <tr>
+              <th data-sort="invoiceid">Rechnung</th>
+              <th data-sort="datum">Datum</th>
+              <th data-sort="itemid">Artikel</th>
+              <th data-sort="marke">Marke</th>
+              <th data-sort="modell">Modell</th>
+              <th data-sort="produktgruppe">Gruppe</th>
+              <th data-sort="fahrradtyp">Fahrradtyp</th>
+              <th class="num" data-sort="menge">Menge</th>
+              <th class="num" data-sort="montagezeit_min">Montagezeit</th>
+              <th class="num" data-sort="uvp">UVP</th>
+              <th data-sort="pickstatus">Zeilenstatus</th>
+              <th>Stationen</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="tableFaktFooter"></span>
+        <div class="pager" data-table="fakt">
+          <label>Zeilen pro Seite
+            <select class="page-size">
+              <option>25</option><option selected>50</option><option>100</option><option>250</option>
+            </select>
+          </label>
+          <button class="page-prev" title="Zurück">‹</button>
+          <span class="page-info">1 / 1</span>
+          <button class="page-next" title="Weiter">›</button>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ========= TAB: Montage-Übersicht (pro Artikelnummer) ========= -->
+  <section class="tab-panel" id="tab-uebersicht">
+
+    <div class="kpi-grid">
+      <div class="kpi card">
+        <div class="kpi-icon blue"><svg viewBox="0 0 24 24"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Verschiedene Artikel</span>
+          <strong class="kpi-value" id="kpiUbArtikel">0</strong>
+          <span class="kpi-sub">in offen + fakturiert</span>
+        </div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-icon orange"><svg viewBox="0 0 24 24"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2zm0-4h-2V9h2z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Offene Stück (gesamt)</span>
+          <strong class="kpi-value" id="kpiUbOffenStk">0</strong>
+          <span class="kpi-sub">Summe Mengen offen</span>
+        </div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-icon green"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Fakturierte Stück</span>
+          <strong class="kpi-value" id="kpiUbFaktStk">0</strong>
+          <span class="kpi-sub">im aktuellen Filter</span>
+        </div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-icon red"><svg viewBox="0 0 24 24"><path d="M12 8v5l4 2-.75 1.23L10.5 14V8zM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Ø Montagezeit (real)</span>
+          <strong class="kpi-value"><span id="kpiUbAvgMon">–</span> Min</strong>
+          <span class="kpi-sub">Δ zwischen 1. & 2. Montage-Close</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2-1">
+      <div class="card chart-card">
+        <div class="card-head">
+          <h3>Top-Selled Artikel</h3>
+          <span class="card-sub">Top 10 nach fakturierter Menge</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartTopSelled"></canvas></div>
+      </div>
+      <div class="card chart-card">
+        <div class="card-head">
+          <h3>Verteilung nach Status</h3>
+          <span class="card-sub">offen / fakturiert</span>
+        </div>
+        <div class="chart-wrap donut-wrap"><canvas id="donutUbStatus"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card table-card">
+      <div class="card-head">
+        <h3>Pro Artikelnummer</h3>
+        <div class="card-tools">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 13 15.5l.27.28v.79L18.25 21 21 18.25zM9.5 14A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+            <input type="text" id="searchUebersicht" placeholder="Suchen (Artikel, Marke, Modell)…" />
+          </div>
+          <button class="btn btn-ghost btn-sm" id="exportUebersicht">
+            <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5zm7-18-5 5h3v4h4V7h3z"/></svg>
+            Export
+          </button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table sortable" id="tableUebersicht">
+          <thead>
+            <tr>
+              <th data-sort="itemid">Artikel</th>
+              <th data-sort="marke">Marke</th>
+              <th data-sort="modell">Modell</th>
+              <th data-sort="fahrradtyp">Typ</th>
+              <th class="num" data-sort="uvp">UVP</th>
+              <th class="num" data-sort="menge_offen">Offen</th>
+              <th class="num" data-sort="menge_fakt">Faktur.</th>
+              <th class="num" data-sort="cnt_montiert">Montiert</th>
+              <th class="num" data-sort="cnt_in_montage">In Mont.</th>
+              <th class="num" data-sort="cnt_offen">Noch n. mont.</th>
+              <th class="num" data-sort="alter_max">Älteste off.</th>
+              <th data-sort="datum_letzte">Letzter Auftrag</th>
+              <th class="num">Detail</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="tableUbFooter"></span>
+        <div class="pager" data-table="uebersicht">
+          <label>Zeilen pro Seite
+            <select class="page-size">
+              <option>25</option><option selected>50</option><option>100</option><option>250</option>
+            </select>
+          </label>
+          <button class="page-prev" title="Zurück">‹</button>
+          <span class="page-info">1 / 1</span>
+          <button class="page-next" title="Weiter">›</button>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ========= Detail-Drawer (Eye-Click in Übersicht) ========= -->
+  <div class="drawer-backdrop hidden" id="ubDrawer">
+    <div class="drawer-panel">
+      <div class="drawer-head">
+        <div>
+          <h3 id="ubDrawerTitle">–</h3>
+          <span class="card-sub" id="ubDrawerSub">–</span>
+        </div>
+        <button class="icon-btn" id="ubDrawerClose" title="Schließen">
+          <svg viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <div class="drawer-body" id="ubDrawerBody"></div>
+    </div>
+  </div>
+
+  <!-- ========= TAB: Daily Tracking ========= -->
+  <section class="tab-panel" id="tab-daily">
+
+    <div class="kpi-grid">
+      <div class="kpi card">
+        <div class="kpi-icon blue"><svg viewBox="0 0 24 24"><path d="M12 8v5l4 2-.75 1.23L10.5 14V8zM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Heute montiert</span>
+          <strong class="kpi-value" id="kpiHeuteMontiert">0</strong>
+          <span class="kpi-sub">Räder (fakturiert)</span>
+        </div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-icon green"><svg viewBox="0 0 24 24"><path d="M3 17h4v4H3zm7-6h4v10h-4zm7-8h4v18h-4z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Ø pro Tag (30d)</span>
+          <strong class="kpi-value" id="kpiAvg30">0</strong>
+          <span class="kpi-sub">Räder / Werktag</span>
+        </div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-icon orange"><svg viewBox="0 0 24 24"><path d="M2 17 12 7l10 10H2z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Spitzenwert</span>
+          <strong class="kpi-value" id="kpiPeak">0</strong>
+          <span class="kpi-sub" id="kpiPeakDate">–</span>
+        </div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-icon red"><svg viewBox="0 0 24 24"><path d="M4 4h16v4H4zM4 10h16v4H4zM4 16h16v4H4z"/></svg></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Warteschlange</span>
+          <strong class="kpi-value" id="kpiBacklog">0</strong>
+          <span class="kpi-sub">offene Räder</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2-1">
+      <div class="card chart-card">
+        <div class="card-head">
+          <h3>Fakturierte Räder – letzte 30 Tage</h3>
+          <span class="card-sub">Werktäglich</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chart30d"></canvas></div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-head">
+          <h3>Verteilung nach Fahrradtyp</h3>
+          <span class="card-sub">offene Aufträge</span>
+        </div>
+        <div class="chart-wrap donut-wrap">
+          <canvas id="donutBikeType"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="card-head">
+        <h3>Monatsvergleich (letzte 12 Monate vs. Vorjahr)</h3>
+        <span class="card-sub">Fakturierte Räder je Monat</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
+    </div>
+
+    <div class="card table-card">
+      <div class="card-head">
+        <h3>Tagestracking</h3>
+        <span class="card-sub">Fakturiert pro Tag (letzte 30 Tage)</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table compact" id="tableDaily">
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Wochentag</th>
+              <th class="num">Räder fakturiert</th>
+              <th class="num">Summe Montagezeit</th>
+              <th class="num">Ø Zeit / Rad</th>
+              <th class="num">Kapazität geplant</th>
+              <th class="num">Auslastung</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<!-- ========= Toast container ========= -->
+<div class="toast-stack" id="toastStack"></div>
+
+<!-- ========= Loading overlay ========= -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <span id="loadingText">Lade Daten…</span>
+</div>
+
+<!-- Scripts -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
