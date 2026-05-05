@@ -1150,7 +1150,18 @@
   function renderAeltesteList() {
     const ul = document.getElementById("listAlteste");
     if (!ul) return;
+    // Nur wirklich offene Auftraege bzw. solche in der Montage anzeigen.
+    // Bikes mit Pickstatus "Montiert", "Verpackung", "Warenausgang" oder
+    // "Storniert" sind bereits abgearbeitet und sollen NICHT in der
+    // "Aelteste offen"-Top-10 erscheinen.
+    const isReallyOpen = (r) => {
+      const ps = (r.pickstatus || "").toLowerCase();
+      // Wenn Pickstatus leer oder "offen" oder "montage"/"vormontage" -> noch offen
+      if (!ps || ps === "offen" || ps === "vormontage" || ps === "montage") return true;
+      return false;
+    };
     const rows = (state.data.offene.rows || [])
+      .filter(isReallyOpen)
       .slice()
       .sort((a, b) => (parseInt(b.alter_tage, 10) || 0) - (parseInt(a.alter_tage, 10) || 0))
       .slice(0, 10);
