@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Montage Dashboard – Login | Fahrrad XXL</title>
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="login-body">
+
+<!-- Animated gradient background -->
+<div class="login-bg">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<main class="login-shell">
+
+  <!-- Left side: brand panel -->
+  <aside class="login-brand">
+    <div class="brand-top">
+      <div class="brand-logo">
+        <span class="brand-mark">XXL</span>
+        <div class="brand-name">
+          <strong>Fahrrad XXL</strong>
+          <span>Montage Dashboard</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="brand-hero">
+      <h1>Willkommen zurück.</h1>
+      <p>Das Montage-Leitstand-System für Werkstatt-Planung, Kapazität und Auftrags-Tracking – schnell, übersichtlich, in Echtzeit.</p>
+
+      <ul class="brand-features">
+        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Echtzeit-Auftragsstatus aus D365FO</li>
+        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Kapazitätsplanung für Monteure</li>
+        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Daily Tracking &amp; Trends</li>
+        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Fakturierte Aufträge im Blick</li>
+      </ul>
+    </div>
+
+    <div class="brand-bottom">
+      <span>© 2026 Fahrrad XXL · Montage-Leitstand</span>
+    </div>
+  </aside>
+
+  <!-- Right side: form -->
+  <section class="login-form-wrap">
+    <form id="loginForm" class="login-card" autocomplete="on">
+      <div class="login-card-head">
+        <h2>Anmelden</h2>
+        <p>Bitte melde dich mit deinen Zugangsdaten an.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="lagerort">Lagerort</label>
+        <div class="input-wrap select-wrap">
+          <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+          <select id="lagerort" name="lagerort" required>
+            <option value="" disabled>Wird geladen …</option>
+          </select>
+          <svg class="select-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="username">Benutzername</label>
+        <div class="input-wrap">
+          <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.418 0-8 2.239-8 5v2h16v-2c0-2.761-3.582-5-8-5z"/></svg>
+          <input type="text" id="username" name="username" placeholder="z. B. houssem" required autocomplete="username" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Passwort</label>
+        <div class="input-wrap">
+          <svg viewBox="0 0 24 24"><path d="M17 8V7a5 5 0 0 0-10 0v1H5v13h14V8zM9 7a3 3 0 0 1 6 0v1H9zm3 9a2 2 0 1 1 2-2 2 2 0 0 1-2 2z"/></svg>
+          <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password" />
+          <button type="button" class="toggle-pw" id="togglePw" aria-label="Passwort anzeigen">
+            <svg viewBox="0 0 24 24"><path d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7zm0 12a5 5 0 1 1 5-5 5 5 0 0 1-5 5zm0-8a3 3 0 1 0 3 3 3 3 0 0 0-3-3z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="checkbox">
+          <input type="checkbox" id="remember" checked />
+          <span>Angemeldet bleiben</span>
+        </label>
+        <a href="#" class="link-muted" onclick="event.preventDefault(); alert('Bitte wende dich an die IT-Abteilung.');">Passwort vergessen?</a>
+      </div>
+
+      <button type="submit" id="loginBtn" class="btn btn-primary btn-lg">
+        <span class="btn-label">Anmelden</span>
+        <svg class="btn-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        <span class="btn-spinner" aria-hidden="true"></span>
+      </button>
+
+      <div id="loginError" class="alert alert-error hidden" role="alert">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-2h2zm0-4h-2V7h2z"/></svg>
+        <span id="loginErrorText">Ungültige Zugangsdaten.</span>
+      </div>
+
+      <div class="login-footer">
+        <span class="dot-online"></span>
+        <span>Backend: <code id="apiHost">fahrradxxlmontage</code></span>
+      </div>
+    </form>
+  </section>
+
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // Show API host in footer
+  document.getElementById('apiHost').textContent = (window.APP_CONFIG && APP_CONFIG.API_BASE) || 'fahrradxxlmontage';
+
+  // Toggle password visibility
+  document.getElementById('togglePw').addEventListener('click', () => {
+    const pw = document.getElementById('password');
+    pw.type = pw.type === 'password' ? 'text' : 'password';
+  });
+
+  // If already logged in, go straight to dashboard
+  if (Auth.getToken()) {
+    window.location.replace('index.html');
+  }
+
+  /* ---------- Lagerort-Dropdown befüllen ---------- */
+  // Fallback-Liste falls das Backend (noch) nicht erreichbar ist.
+  const FALLBACK_WAREHOUSES = [
+    { id: "HLROD", name: "Rodgau",       company: "Hürter" },
+    { id: "HLKES", name: "Kesselsdorf",  company: "Hürter" },
+    { id: "HLCHE", name: "Chemnitz",     company: "Hürter" },
+    { id: "HLDDN", name: "Dresden-Nord", company: "Hürter" },
+    { id: "HLDDS", name: "Dresden-Süd",  company: "Hürter" },
+    { id: "HLHAL", name: "Halle",        company: "Hürter" },
+    { id: "HLLEI", name: "Leipzig",      company: "Hürter" },
+    { id: "HLSTA", name: "Stade",        company: "Hürter" },
+    { id: "HLMAI", name: "Mainz",        company: "Hürter" },
+    { id: "HLGRI", name: "Griesheim",    company: "Hürter" },
+    { id: "HLKOB", name: "Koblenz",      company: "Hürter" },
+    { id: "HLMHK", name: "Mülheim-Kärlich", company: "Hürter" },
+    { id: "HLMST", name: "Münster",      company: "Hürter" },
+    { id: "HLLUD", name: "Ludwigshafen", company: "Hürter" },
+    { id: "HLHAM", name: "Hamburg",      company: "Hürter" },
+    { id: "HLBOC", name: "Bochum",       company: "Hürter" },
+    { id: "HLGEL", name: "Gelsenkirchen","company": "Hürter" },
+    { id: "HLGEZ", name: "Gießen",       company: "Hürter" },
+    { id: "HLDEI", name: "Dreieich",     company: "Hürter" },
+    { id: "A1DDN", name: "Dresden-Nord (Emporon)", company: "Emporon" },
+    { id: "A1STA", name: "Stade (Emporon)",        company: "Emporon" },
+    { id: "A1MAI", name: "Mainz (Emporon)",        company: "Emporon" },
+    { id: "A1MST", name: "Münster (Emporon)",      company: "Emporon" },
+    { id: "MS1",   name: "Marcks 1",     company: "Marcks" },
+    { id: "MS2",   name: "Marcks 2",     company: "Marcks" },
+    { id: "LU1",   name: "Ludwigshafen", company: "Stores" },
+    { id: "PL1",   name: "Plauen",       company: "Stores" },
+    { id: "HH1",   name: "Hamburg",      company: "Stores" },
+    { id: "BE1",   name: "Berlin",       company: "Stores" },
+    { id: "FU1",   name: "Fürth",        company: "Stores" },
+    { id: "PF1",   name: "Pforzheim",    company: "Stores" },
+    { id: "ES1",   name: "Esslingen",    company: "Stores" }
+  ];
+
+  function populateWarehouseSelect(list, defaultId) {
+    const sel = document.getElementById('lagerort');
+    sel.innerHTML = '';
+
+    // Nach Unternehmen gruppieren
+    const groups = {};
+    list.forEach(w => {
+      (groups[w.company || 'Sonstige'] = groups[w.company || 'Sonstige'] || []).push(w);
+    });
+
+    // Reihenfolge: Hürter zuerst (häufigster Fall), dann alphabetisch.
+    const companyOrder = Object.keys(groups).sort((a, b) => {
+      if (a === 'Hürter') return -1;
+      if (b === 'Hürter') return 1;
+      return a.localeCompare(b);
+    });
+
+    companyOrder.forEach(company => {
+      const grp = document.createElement('optgroup');
+      grp.label = company;
+      groups[company]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(w => {
+          const opt = document.createElement('option');
+          opt.value       = w.id;
+          opt.textContent = `${w.name} — ${w.id}`;
+          if (w.id === defaultId) opt.selected = true;
+          grp.appendChild(opt);
+        });
+      sel.appendChild(grp);
+    });
+
+    // Vorher gewählten Lagerort (aus früherem Login) bevorzugen.
+    const saved = localStorage.getItem('warehouseId');
+    if (saved) {
+      const match = [...sel.options].find(o => o.value === saved);
+      if (match) sel.value = saved;
+    }
+  }
+
+  // Liste vom Backend laden (fällt auf FALLBACK zurück wenn Fetch failt).
+  (async () => {
+    try {
+      const base = (window.APP_CONFIG && APP_CONFIG.API_BASE) || '';
+      const url  = base.replace(/\/$/, '') + '/api/warehouses';
+      const ctl  = new AbortController();
+      setTimeout(() => ctl.abort(), 5000);
+      const r = await fetch(url, { signal: ctl.signal });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      populateWarehouseSelect(j.warehouses || FALLBACK_WAREHOUSES, j.default || 'HLROD');
+    } catch (_e) {
+      populateWarehouseSelect(FALLBACK_WAREHOUSES, 'HLROD');
+    }
+  })();
+
+  // Login submit
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn    = document.getElementById('loginBtn');
+    const errBox = document.getElementById('loginError');
+    const errTxt = document.getElementById('loginErrorText');
+    const user   = document.getElementById('username').value.trim();
+    const pw     = document.getElementById('password').value;
+    const wh     = document.getElementById('lagerort').value;
+
+    errBox.classList.add('hidden');
+    btn.classList.add('is-loading');
+    btn.disabled = true;
+
+    try {
+      const res = await Auth.login(user, pw, wh);
+      if (res && res.token) {
+        btn.classList.add('is-success');
+        setTimeout(() => window.location.replace('index.html'), 350);
+      } else {
+        throw new Error('Unbekannter Fehler.');
+      }
+    } catch (err) {
+      errTxt.textContent = err.message || 'Login fehlgeschlagen.';
+      errBox.classList.remove('hidden');
+      btn.classList.remove('is-loading');
+      btn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>
